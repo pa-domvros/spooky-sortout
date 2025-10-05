@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spooky Sort-Out: A Haunted English Adventure</title>
+    <style>
+        /* --- Google Fonts --- */
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Lato:wght@400;700&display=swap');
+
+        /* --- CSS Variables --- */
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #9932CC; /* DarkOrchid Purple */
+            --accent-color: #D8BFD8;  /* Thistle Lavender */
+            --text-color: #f0f0f0;
+            --correct-color: #27ae60; /* Green */
+            --incorrect-color: #c0392b; /* Red */
+            --clue-text-color: #ffc107; /* Gold */
+        }
+
+        /* --- General Styles --- */
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Cg fill="%231a1a1a" fill-opacity="0.4"%3E%3Cpath d="M50 0v100M0 50h100"/_3E%3C/g%3E%3C/svg%3E');
+            background-size: 50px;
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            padding: 30px;
+            background-color: var(--surface-color);
+            border: 1px solid #333;
+            border-radius: 12px;
+            box-shadow: 0 5px 35px rgba(0, 0, 0, 0.9);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before, .container::after {
+            content: '🕸️';
+            position: absolute;
+            font-size: 5rem;
+            opacity: 0.6;
+            z-index: 0;
+        }
+        .container::before { top: -20px; left: -20px; transform: rotate(-30deg); }
+        .container::after { bottom: -20px; right: -20px; transform: rotate(150deg); }
+
+        h1 {
+            font-family: 'Creepster', cursive;
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 4rem;
+            letter-spacing: 4px;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            position: relative;
+            z-index: 1;
+        }
+
+        .intro {
+            text-align: center;
+            font-style: italic;
+            color: #bbb;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- Clue Board --- */
+        .clue-board {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px dashed #666;
+            position: relative;
+            z-index: 1;
+        }
+
+        .clue-board h3 {
+            margin: 0 0 10px 0;
+            text-align: center;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .clue-board h3::before, .clue-board h3::after { content: '👻'; font-size: 1.2em; }
+
+        .clues-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .clue-item {
+            font-size: 1rem;
+            background-color: #111;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        
+        .clue-item span {
+            font-family: 'Creepster', cursive;
+            font-weight: bold;
+            color: var(--clue-text-color);
+            letter-spacing: 1px;
+        }
+
+        /* --- Room Selection --- */
+        #room-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        @media (min-width: 850px) {
+            #room-selection {
+                grid-template-columns: repeat(3, 1fr); /* 3x2 grid on larger screens */
+            }
+        }
+
+        .room {
+            background-color: #2a2a2a;
+            padding: 25px;
+            border-radius: 8px;
+            border: 2px solid #444;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .room:not(.cleared):hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--accent-color);
+            box-shadow: 0 8px 20px rgba(153, 50, 204, 0.4);
+        }
+
+        .room h4 {
+            margin: 0 0 10px 0;
+            font-size: 1.3rem;
+            color: var(--primary-color);
+        }
+
+        .room p { margin: 0; font-size: 0.95rem; color: #aaa; }
+        .room.cleared { background-color: #222; color: #777; cursor: not-allowed; opacity: 0.7; border-color: #333; }
+        .room.cleared h4::after { content: ' ✅'; font-size: 0.9em; }
+        
+        .room::before {
+            content: '🎃';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 1.5rem;
+            opacity: 0.7;
+        }
+        .room:nth-child(even)::before { top: auto; bottom: 5px; right: 5px; left: auto; }
+
+        /* --- Challenge Modal --- */
+        #challenge-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        #challenge-content {
+            background-color: var(--surface-color);
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 0 40px rgba(153, 50, 204, 0.6);
+            border: 2px solid var(--primary-color);
+        }
+
+        .modal-room-title { font-family: 'Creepster', cursive; color: var(--primary-color); text-align: center; font-size: 2rem; margin-bottom: 20px; }
+        .question { font-size: 1.3rem; margin-bottom: 25px; padding: 10px; background-color: rgba(0, 0, 0, 0.2); border-left: 3px solid var(--primary-color); border-radius: 3px; }
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+
+        .option-btn {
+            width: 100%; padding: 18px; font-size: 1.1rem; background-color: #333;
+            border: 1px solid #666; color: var(--text-color); cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s; border-radius: 5px; text-align: left;
+        }
+        .option-btn:hover { background-color: #555; border-color: var(--accent-color); transform: translateX(5px); }
+        
+        #feedback { text-align: center; font-weight: bold; margin-top: 25px; padding: 15px; border-radius: 5px; font-size: 1.4rem; }
+        .feedback-correct { color: white; background-color: var(--correct-color); animation: flashGreen 0.6s ease-out 3; }
+        @keyframes flashGreen { 0%, 100% { background-color: var(--correct-color); } 50% { background-color: #5cb85c; } }
+        .feedback-incorrect { color: white; background-color: var(--incorrect-color); }
+
+        /* --- Solution, Reset, & Footer --- */
+        #solution {
+            display: none; margin-top: 30px; padding: 25px; background-color: #111;
+            border: 2px solid var(--correct-color); text-align: center; border-radius: 8px;
+            animation: slideUp 0.5s ease-out forwards; z-index: 1; position: relative;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        #solution h2 { font-family: 'Creepster', cursive; color: var(--correct-color); font-size: 2.5rem; margin-top: 0; }
+        
+        #reset-button {
+            display: block; margin: 40px auto 0 auto; font-family: 'Lato', sans-serif;
+            background-color: #555; color: var(--text-color); border: none; padding: 12px 30px;
+            border-radius: 5px; cursor: pointer; font-size: 1.1rem;
+            transition: background-color 0.3s, transform 0.2s; z-index: 1; position: relative;
+        }
+        #reset-button:hover { background-color: var(--primary-color); transform: translateY(-2px); }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed #444;
+            color: #888;
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Spooky Sort-Out</h1>
+        <p class="intro">Welcome, brave explorer! 👻 An old manor whispers secrets. Can you solve the English puzzles in any four rooms to find the hidden clues and help the lonely ghost find peace?</p>
+
+        <div class="clue-board">
+            <h3>Investigation Clues</h3>
+            <div class="clues-grid">
+                <div class="clue-item">Ghost's Name: <span id="clue0">???</span></div>
+                <div class="clue-item">Lost Item: <span id="clue1">???</span></div>
+                <div class="clue-item">Secret Place: <span id="clue2">???</span></div>
+                <div class="clue-item">Final Location: <span id="clue3">???</span></div>
+            </div>
+        </div>
+        
+        <h2>Which Rooms Will You Explore?</h2>
+        <div id="room-selection"></div>
+
+        <div id="solution">
+            <h2>The Mystery is Solved! 🎉</h2>
+            <p>You pieced together all the clues! The kind ghost's name is <b><span id="solution-ghost"></span></b>. The ghost is searching for <span id="solution-gender"></span> lost <b><span id="solution-item"></span></b>. It was left behind the <b><span id="solution-place"></span></b> in the main <b><span id="solution-location"></span></b>. Now the spirit can finally be at peace. 💖</p>
+        </div>
+        
+        <button id="reset-button">Start A New Mystery</button>
+
+        <footer>
+            🎃🧙 Created by Panagiotis Domvros, English and Drama Teacher, All Rights Reserved 🧙🎃
+        </footer>
+    </div>
+
+    <div id="challenge-modal">
+        <div id="challenge-content"></div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const masterStoryPool = {
+            ghosts: [
+                { name: 'Elara', gender: 'her' },
+                { name: 'Arthur', gender: 'his' },
+                { name: 'Lenora', gender: 'her' },
+                { name: 'Caleb', gender: 'his' },
+                { name: 'Genevieve', gender: 'her' }
+            ],
+            items: ['silver locket', 'leather-bound diary', 'ivory music box', 'golden pocket watch', 'forgotten portrait'],
+            places: ['loose bookshelf', 'crack in the wall', 'wobbly floorboard', 'secret drawer', 'dusty old chest'],
+            locations: ['study', 'attic', 'library', 'master bedroom', 'cellar']
+        };
+
+        const masterChallengePool = {
+            grammar: [
+                { q: 'I ___ a book when I suddenly ___ a strange noise.', o: ['was reading / heard', 'read / was hearing', 'am reading / hear', 'read / heard'], a: 'was reading / heard' },
+                { q: 'The ghost ___ through the wall while we ___ dinner.', o: ['floated / were eating', 'was floating / ate', 'floated / ate', 'floats / eat'], a: 'floated / were eating' },
+                { q: 'She ___ down the dark hallway when the lights ___ out.', o: ['walked / was going', 'was walking / went', 'walks / go', 'walked / went'], a: 'was walking / went' },
+                { q: 'Have you ever ___ a real ghost?', o: ['see', 'saw', 'seen', 'seeing'], a: 'seen' },
+                { q: 'I ___ my keys. I can\'t find them anywhere!', o: ['lost', 'have lost', 'did lose', 'am losing'], a: 'have lost' },
+                { q: 'She ___ in this haunted house since she was a child.', o: ['has lived', 'lived', 'lives', 'is living'], a: 'has lived' },
+                { q: 'The secret key is hidden ___ the old, dusty books.', o: ['on', 'between', 'at', 'in front'], a: 'between' },
+                { q: 'A mysterious painting hangs ___ the fireplace.', o: ['above', 'under', 'through', 'next'], a: 'above' },
+                { q: 'The ghost disappeared ___ the corner.', o: ['at', 'on', 'around', 'in'], a: 'around' },
+                { q: 'It\'s very cold in here. A window ___ be open.', o: ['must', 'can\'t', 'should\'t', 'might not'], a: 'must' },
+                { q: 'I\'m not sure, but that shadow ___ be a person.', o: ['must', 'might', 'can\'t', 'should'], a: 'might' },
+                { q: 'If I ___ a ghost, I would be very scared.', o: ['see', 'saw', 'seen', 'would see'], a: 'saw' },
+                { q: 'What would you do if you ___ a secret door?', o: ['find', 'will find', 'found', 'have found'], a: 'found' },
+                { q: 'This is the ___ room in the entire house.', o: ['more spooky', 'spookiest', 'spooky', 'spookier'], a: 'spookiest' },
+                { q: 'There aren\'t ___ cookies left in the kitchen.', o: ['some', 'any', 'no', 'much'], a: 'any' },
+                { q: 'You ___ touch anything in this room. It\'s forbidden.', o: ['must not', 'might not', 'don\'t have to', 'could'], a: 'must not' },
+                { q: 'The ghost story was ___ interesting than the movie.', o: ['most', 'more', 'as', 'so'], a: 'more' },
+                { q: 'He looked ___ if he had seen a ghost.', o: ['like', 'as', 'so', 'that'], a: 'as' },
+                { q: 'I haven\'t seen him ___ last Halloween.', o: ['for', 'since', 'at', 'on'], a: 'since' },
+                { q: '___ you hear that strange noise just now?', o: ['Did', 'Do', 'Have', 'Are'], a: 'Did' }
+            ],
+            vocabulary: [
+                { q: 'Another word for "very old" is ___.', o: ['ancient', 'new', 'modern', 'young'], a: 'ancient' },
+                { q: 'If you are very scared, you are ___.', o: ['bored', 'excited', 'frightened', 'calm'], a: 'frightened' },
+                { q: 'A soft, quiet voice is a ___.', o: ['scream', 'shout', 'laugh', 'whisper'], a: 'whisper' },
+                { q: 'Something that is strange and hard to understand is ___.', o: ['normal', 'easy', 'mysterious', 'boring'], a: 'mysterious' },
+                { q: 'The dark shape you see when light is blocked is a ___.', o: ['cloud', 'shadow', 'reflection', 'painting'], a: 'shadow' },
+                { q: 'Information that helps you solve a puzzle is a ___.', o: ['problem', 'question', 'clue', 'story'], a: 'clue' },
+                { q: 'To look for something carefully is to ___.', o: ['run', 'eat', 'sleep', 'search'], a: 'search' },
+                { q: 'The opposite of "appear" is ___.', o: ['show', 'disappear', 'arrive', 'stay'], a: 'disappear' },
+                { q: 'A sound or sight that is scary and strange is ___.', o: ['happy', 'funny', 'creepy', 'lovely'], a: 'creepy' },
+                { q: 'The old wooden floor began to ___ under my feet.', o: ['sing', 'shine', 'creak', 'fly'], a: 'creak' },
+                { q: 'I felt a cold ___ on my neck, but no one was there.', o: ['breath', 'hand', 'light', 'sound'], a: 'breath' },
+                { q: 'A house where ghosts live is ___.', o: ['crowded', 'haunted', 'modern', 'expensive'], a: 'haunted' },
+                { q: 'The room was completely ___, with no light at all.', o: ['bright', 'colorful', 'dark', 'open'], a: 'dark' },
+                { q: 'A story that is from imagination, not fact, is called ___.', o: ['news', 'history', 'fiction', 'a documentary'], a: 'fiction' },
+                { q: 'I could see my ___ in the dusty mirror.', o: ['voice', 'idea', 'reflection', 'thought'], a: 'reflection' },
+                { q: 'To shake with fear is to ___.', o: ['laugh', 'dance', 'tremble', 'stand'], a: 'tremble' },
+                { q: 'A ___ is a sound that repeats after the original sound has stopped.', o: ['echo', 'alarm', 'instrument', 'image'], a: 'echo' },
+                { q: 'The air in the locked room smelled old and ___.', o: ['fresh', 'new', 'musty', 'sweet'], a: 'musty' },
+                { q: 'A deep, long sound of sadness or pain is a ___.', o: ['giggle', 'cheer', 'moan', 'song'], a: 'moan' },
+                { q: 'A strange and scary dream is called a ___.', o: ['wish', 'memory', 'plan', 'nightmare'], a: 'nightmare' }
+            ],
+            reading: [
+                { q: 'Diary: "I lost my locket near the place with all the flowers. It was my favorite, a gift from my mother." Where did she lose the locket?', o: ['In the kitchen', 'In the garden', 'In the bedroom', 'In the library'], a: 'In the garden' },
+                { q: 'Note: "The key is not in the box. Look where the fire burns in winter." Where is the key?', o: ['In the fireplace', 'In the oven', 'Under the bed', 'Outside'], a: 'In the fireplace' },
+                { q: '"A cold wind blew, but all the windows were closed. A book fell from the shelf, but no one touched it." What is likely happening?', o: ['A ghost is present', 'It is a normal day', 'Someone is cleaning', 'There is an earthquake'], a: 'A ghost is present' },
+                { q: 'Note: "To find the secret, follow the cat with one blue eye. It sleeps where the sun first touches the house." Where should you look in the morning?', o: ['The darkest room', 'The west side', 'The east side', 'The basement'], a: 'The east side' },
+                { q: 'Diary: "He was the only person who was kind to me. Now he is gone, and I am all alone." How does the writer feel?', o: ['Happy', 'Angry', 'Excited', 'Sad and lonely'], a: 'Sad and lonely' },
+                { q: 'First, you hear a whisper. Then, the lights flicker. Finally, a door slams shut. What happens SECOND?', o: ['A door slams shut', 'You hear a whisper', 'The lights flicker', 'You run away'], a: 'The lights flicker' },
+                { q: 'The note says, "I will return when the clock strikes thirteen." When will the person return?', o: ['At 1 PM', 'At midnight', 'Never', 'Tomorrow'], a: 'Never' },
+                { q: 'There are three doors. The red door leads to fire. The blue door leads to a deep ocean. The green door leads to safety. Which door is safe to choose?', o: ['The red door', 'The blue door', 'The green door', 'None of them'], a: 'The green door' },
+                { q: 'The painting shows a woman pointing to a vase. There is nothing else in the painting. Where might a clue be hidden?', o: ['In the painting', 'In a real vase', 'Behind the painting', 'Under the floor'], a: 'In a real vase' },
+                { q: 'The book says: "The monster is afraid of only one thing: the sound of a silver bell." What should you use against the monster?', o: ['A sword', 'Fire', 'A silver bell', 'A loud shout'], a: 'A silver bell' },
+                { q: 'A sign reads: "Do not enter after sunset." It is 7 PM and the sun is gone. What should you do?', o: ['Enter quickly', 'Wait until morning', 'Knock on the door', 'Ignore the sign'], a: 'Wait until morning' },
+                { q: 'You find three keys. A note says, "The largest key opens the smallest box." You see a huge gate and a tiny chest. Where should you use the largest key?', o: ['On the huge gate', 'On the tiny chest', 'On the front door', 'Throw it away'], a: 'On the tiny chest' },
+                { q: 'Diary: "My brother loved to play the piano. I can still hear his music sometimes, even though the piano is gone." What is the writer experiencing?', o: ['A memory or a ghost', 'A concert', 'A new piano', 'A radio playing'], a: 'A memory or a ghost' },
+                { q: 'The map has a big X on the old oak tree. What does the X usually mean on a map like this?', o: ['Danger, stay away', 'A treasure is buried there', 'A good place to rest', 'The tree should be cut down'], a: 'A treasure is buried there' },
+                { q: 'Note: "The answer is not what you see, but what you hear." You see a statue and hear a dripping sound. Where is the answer?', o: ['About the statue', 'About the dripping sound', 'In a different room', 'In a book'], a: 'About the dripping sound' },
+                { q: 'The ghost only appears on the coldest night of the year. In which season does the ghost appear?', o: ['Summer', 'Spring', 'Autumn', 'Winter'], a: 'Winter' },
+                { q: 'A riddle says: "I have no voice, but I tell many stories." What am I?', o: ['A ghost', 'A book', 'A telephone', 'A map'], a: 'A book' },
+                { q: 'The legend says the treasure is "behind the face of the king." You are in a room with a large painting of a king. Where is the treasure?', o: ['In the king\'s castle', 'Behind the painting', 'Under the king\'s chair', 'In a history book'], a: 'Behind the painting' },
+                { q: 'Diary: "I left it in the room where we ate our last meal. A single candle was on the table." Which room is it?', o: ['The bedroom', 'The library', 'The garden', 'The dining room'], a: 'The dining room' },
+                { q: 'To open the door, you must say the opposite of "light and day." What is the password?', o: ['"Heavy and morning"', '"Dark and night"', '"Sun and moon"', '"Easy and evening"'], a: '"Dark and night"' }
+            ]
+        };
+
+        let currentGameChallenges = [];
+        let currentChallengeId = null;
+        let currentMystery = {};
+        let clearedRoomsCount = 0;
+
+        const roomSelectionEl = document.getElementById('room-selection');
+        const modalEl = document.getElementById('challenge-modal');
+        const modalContentEl = document.getElementById('challenge-content');
+        const solutionEl = document.getElementById('solution');
+        const resetButton = document.getElementById('reset-button');
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function setupNewGame() {
+            clearedRoomsCount = 0;
+            currentMystery = {
+                ghost: shuffleArray([...masterStoryPool.ghosts])[0],
+                item: shuffleArray([...masterStoryPool.items])[0],
+                place: shuffleArray([...masterStoryPool.places])[0],
+                location: shuffleArray([...masterStoryPool.locations])[0]
+            };
+
+            const selectedGrammar = shuffleArray([...masterChallengePool.grammar]).slice(0, 2);
+            const selectedVocab = shuffleArray([...masterChallengePool.vocabulary]).slice(0, 2);
+            const selectedReading = shuffleArray([...masterChallengePool.reading]).slice(0, 2);
+            let combinedChallenges = [...selectedGrammar, ...selectedVocab, ...selectedReading];
+            
+            currentGameChallenges = shuffleArray(combinedChallenges).map((challengeData, index) => ({
+                id: index,
+                roomName: `The ${shuffleArray(['Whispering', 'Forgotten', 'Silent', 'Dusty', 'Grim', 'Shadowy'])[0]} ${shuffleArray(['Chamber', 'Hallway', 'Room', 'Attic', 'Cellar', 'Study'])[0]}`,
+                description: `A new mystery awaits inside... 🦇`,
+                question: challengeData.q,
+                options: shuffleArray([...challengeData.o]),
+                answer: challengeData.a,
+                cleared: false,
+            }));
+            
+            resetUI();
+            renderRooms();
+        }
+
+        function resetUI() {
+            for (let i = 0; i < 4; i++) {
+                const clueEl = document.getElementById(`clue${i}`);
+                if (clueEl) clueEl.textContent = '???';
+            }
+            solutionEl.style.display = 'none';
+        }
+
+        function renderRooms() {
+            roomSelectionEl.innerHTML = '';
+            currentGameChallenges.forEach(challenge => {
+                const roomEl = document.createElement('div');
+                roomEl.className = 'room';
+                if (challenge.cleared) roomEl.classList.add('cleared');
+                roomEl.dataset.challengeId = challenge.id;
+                roomEl.innerHTML = `<h4>${challenge.roomName}</h4><p>${challenge.description}</p>`;
+                roomSelectionEl.appendChild(roomEl);
+            });
+        }
+
+        function displayChallenge(id) {
+            const challenge = currentGameChallenges.find(c => c.id === id);
+            if (!challenge || challenge.cleared) return;
+            currentChallengeId = id;
+            
+            const optionsHTML = challenge.options.map(option => `<button class="option-btn" data-answer="${option}">${option}</button>`).join('');
+            modalContentEl.innerHTML = `
+                <h4 class="modal-room-title">${challenge.roomName}</h4>
+                <div class="question">${challenge.question}</div>
+                <div class="options-grid">${optionsHTML}</div>
+                <div id="feedback"></div>`;
+            modalEl.style.display = 'flex';
+        }
+
+        function checkAnswer(selectedAnswer) {
+            const challenge = currentGameChallenges.find(c => c.id === currentChallengeId);
+            const feedbackEl = modalContentEl.querySelector('#feedback');
+
+            if (selectedAnswer === challenge.answer) {
+                challenge.cleared = true;
+                clearedRoomsCount++;
+                
+                revealClueSequentially();
+                
+                feedbackEl.className = 'feedback-correct';
+                
+                setTimeout(() => {
+                    modalEl.style.display = 'none';
+                    renderRooms();
+                    checkWinCondition();
+                }, 1800);
+            } else {
+                feedbackEl.textContent = 'Not quite... The shadows watch you. 🕸️';
+                feedbackEl.className = 'feedback-incorrect';
+            }
+        }
+
+        function revealClueSequentially() {
+            const feedbackEl = modalContentEl.querySelector('#feedback');
+            switch (clearedRoomsCount) {
+                case 1:
+                    document.getElementById('clue0').textContent = currentMystery.ghost.name;
+                    feedbackEl.textContent = 'Correct! You found the first clue! 🌟';
+                    break;
+                case 2:
+                    document.getElementById('clue1').textContent = currentMystery.item;
+                    feedbackEl.textContent = 'Correct! You found the second clue! ✨';
+                    break;
+                case 3:
+                    document.getElementById('clue2').textContent = currentMystery.place;
+                    feedbackEl.textContent = 'Correct! You found the third clue! 🔑';
+                    break;
+                case 4:
+                    document.getElementById('clue3').textContent = currentMystery.location;
+                    feedbackEl.textContent = 'Correct! You found the final clue! 🎉';
+                    break;
+            }
+        }
+        
+        function checkWinCondition() {
+            if (clearedRoomsCount >= 4) {
+                document.getElementById('solution-ghost').textContent = currentMystery.ghost.name;
+                document.getElementById('solution-gender').textContent = currentMystery.ghost.gender;
+                document.getElementById('solution-item').textContent = currentMystery.item;
+                document.getElementById('solution-place').textContent = currentMystery.place;
+                document.getElementById('solution-location').textContent = currentMystery.location;
+                solutionEl.style.display = 'block';
+
+                document.querySelectorAll('.room:not(.cleared)').forEach(room => {
+                    room.style.pointerEvents = 'none';
+                    room.style.opacity = '0.5';
+                });
+            }
+        }
+
+        roomSelectionEl.addEventListener('click', e => {
+            const room = e.target.closest('.room');
+            if (room && !room.classList.contains('cleared')) {
+                displayChallenge(parseInt(room.dataset.challengeId, 10));
+            }
+        });
+
+        modalContentEl.addEventListener('click', e => {
+            if (e.target.classList.contains('option-btn')) {
+                checkAnswer(e.target.dataset.answer);
+            }
+        });
+
+        modalEl.addEventListener('click', e => {
+            if (e.target === modalEl) {
+                modalEl.style.display = 'none';
+            }
+        });
+
+        resetButton.addEventListener('click', setupNewGame);
+        
+        setupNewGame();
+    });
+    </script>
+</body>
+</html>
